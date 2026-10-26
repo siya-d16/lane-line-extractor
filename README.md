@@ -1,28 +1,33 @@
 # Lane Detection using OpenCV
 
-A 5-step computer vision script in Python to extract lane markings from a front-facing road image (`road.jpg`/`road2.jpg`).
+A 5-step classical computer vision pipeline in Python to detect and extract road lane boundaries from front-facing dashcam imagery (`road.jpg`).
 
-## Overview of the Pipeline
+
+## Pipeline Overview
 
 1. **Image Loading (`1_original.jpg`)**  
-   Reads the input image using `cv2.imread()`. Uses dynamic pathing (`os.path`) so it runs regardless of where the terminal is opened from.
+   Reads the input image using `cv2.imread()`. Paths are resolved relative to the script file (`os.path`) so execution succeeds regardless of working directory.
 
 2. **HSV Color Masking (`2_hsv_mask.jpg`)**  
-   Converts the image to HSV to separate color from lighting conditions. Masks are applied to isolate yellow and white paint while ignoring dark asphalt:
-   - White range: Hue 0–180, Saturation 0–65, Value 175–255
-   - Yellow range: Hue 15–40, Saturation 70–255, Value 80–255
-   - Both masks are merged with `cv2.bitwise_or()`.
+   Converts the input from BGR to the HSV (Hue, Saturation, Value) color space to separate chromaticity from scene illumination:
+   - **White Filter:** Hue 0–180, Saturation 0–65, Value 175–255  
+   - **Yellow Filter:** Hue 15–40, Saturation 70–255, Value 80–255  
+   - Masks are combined via `cv2.bitwise_or()` and applied via `cv2.bitwise_and()` to suppress dark asphalt while preserving painted lane markers under varying lighting conditions.
 
-3. **Gaussian Blur (`3_gaussian_blur.jpg`)**  
-   Converts the masked output to grayscale and applies a 5x5 Gaussian blur to reduce rough road texture and high-frequency noise before finding edges.
+3. **Grayscale & Gaussian Smoothing (`3_gaussian_blur.jpg`)**  
+   Converts the color-filtered result to single-channel grayscale and applies a 5×5 Gaussian blur kernel (`cv2.GaussianBlur`) to attenuate high-frequency asphalt noise and surface texture prior to gradient computation.
 
 4. **Canny Edge Detection (`4_canny_edges.jpg`)**  
-   Uses `cv2.Canny()` with thresholds set to 50 and 150 to locate pixel boundaries and paint line contours.
+   Runs `cv2.Canny()` using dual thresholds ($50$ and $150$, following the standard $1:3$ hysteresis ratio):
+   - Gradients $> 150$ are preserved as confirmed edges.
+   - Gradients $< 50$ are discarded.
+   - Non-Maximum Suppression (NMS) thins detected boundaries to 1-pixel-wide contours.
 
-5. **Region of Interest Masking (`5_roi_edges.jpg`)**  
-   Applies a trapezoidal mask over the driving corridor using `cv2.fillPoly()` and `cv2.bitwise_and()`. This drops all irrelevant edges outside the lane, including the horizon, sky, and guardrails.
+5. **Region of Interest (ROI) Masking (`5_roi_edges.jpg`)**  
+   Constructs a perspective trapezoid matched to road convergence toward the horizon:
+   - Vertices: `(0.05 * W, H)`, `(0.40 * W, 0.60 * H)`, `(0.65 * W, 0.60 * H)`, `(0.98 * W, H)`.
+   - Applied via `cv2.fillPoly()` and `cv2.bitwise_and()` to isolate the vehicle's driving corridor, eliminating false positives from the sky, distant horizon scenery, and roadside barriers while retaining both left and right lane lines.
 
----
 
 ## Stage Outputs
 
@@ -39,11 +44,11 @@ A 5-step computer vision script in Python to extract lane markings from a front-
 ## Directory Structure
 
 ```text
-├── road.jpg              # Input road image
+├── road.jpg              # Input dashcam image
 ├── lane_detector.py      # Main pipeline script
-├── 1_original.jpg        # Saved Step 1 output
-├── 2_hsv_mask.jpg        # Saved Step 2 output
-├── 3_gaussian_blur.jpg   # Saved Step 3 output
-├── 4_canny_edges.jpg     # Saved Step 4 output
-├── 5_roi_edges.jpg       # Saved Step 5 output
+├── 1_original.jpg        # Step 1 output
+├── 2_hsv_mask.jpg        # Step 2 output
+├── 3_gaussian_blur.jpg   # Step 3 output
+├── 4_canny_edges.jpg     # Step 4 output
+├── 5_roi_edges.jpg       # Step 5 output
 └── README.md

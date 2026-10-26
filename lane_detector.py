@@ -12,7 +12,7 @@ if image is None:
     exit()
 
 hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV) #converting to HSV
-'what it is -> HSV - hue, saturation, value(brightness); used like RGB'
+'what it is -> HSV - hue, saturation, value(brightness); '
 
 # Color bounds for white lanes
 lower_white = np.array([0, 0, 175])
@@ -36,10 +36,10 @@ edges = cv2.Canny(blurred, 50, 150) #canny edge
 height, width = edges.shape 
 
 polygon = np.array([[
-    (int(width * 0.10), height),
-    (int(width * 0.45), int(height * 0.55)),
-    (int(width * 0.55), int(height * 0.55)),
-    (int(width * 0.90), height)
+    (int(width * 0.05), height),
+    (int(width * 0.40), int(height * 0.60)),
+    (int(width * 0.65), int(height * 0.60)),
+    (int(width * 0.98), height)
 ]], dtype=np.int32)
 
 roi_mask = np.zeros_like(edges)
